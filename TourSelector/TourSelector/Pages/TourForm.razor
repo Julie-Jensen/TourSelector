@@ -1,0 +1,107 @@
+﻿@page "/tour-selection"
+
+<PageTitle>Tour Selection</PageTitle>
+
+@using TourSelector.Data
+@inject TourService TourService
+
+@using TourSelector.Data.Models
+@inject TourRequest TourRequest
+
+<h1>Tour Selection</h1>
+<br />
+
+@if (tourNames == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm Model="@requestModel" OnValidSubmit="@SubmitRequest">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <p>
+            Name:
+            <br />
+            <InputText id="name" @bind-Value="requestModel.Tour.Customer.Name" />
+            <br /><br />
+            E-mail:
+            <br />
+            <InputText id="email" @bind-Value="requestModel.Tour.Customer.Email" />
+            <br /><br />
+        </p>
+
+        <div>
+            Tours:
+            <br />
+            <InputSelect @bind-Value="requestModel.Tour.TourName">
+                @foreach (var tour in tourNames)
+                {
+                    <option value="@tour">@tour</option>
+                }
+            </InputSelect>
+            <br/>
+            <br />
+        </div>
+
+        <p>
+            <InputRadioGroup @bind-Value="requestModel.RequestType">
+                @foreach (var requestType in (RequestType[])Enum.GetValues(typeof(RequestType)))
+                {
+                    <InputRadio Value="@requestType" />
+                    <text>&nbsp;</text>
+
+                    @requestType
+                    <br />
+                }
+            </InputRadioGroup>
+        </p>
+
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </EditForm>
+    <br />
+
+    if (isBooking)
+    {
+        <p><em>Booking request made!</em></p>
+    }
+    else if (isCancellation)
+    {
+        <p><em>Cancellation request made!</em></p>
+    }
+}
+
+
+@code {
+    private TourRequest requestModel = new();
+    private string[]? tourNames;
+    private bool isBooking = false;
+    private bool isCancellation = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tourNames = await TourService.GetTourNamesAsync();
+    }
+
+    private void SubmitRequest()
+    {
+        TourService.HandleTourRequest(requestModel);
+
+        if (requestModel.RequestType is RequestType.Book)
+        {
+            isCancellation = false;
+            isBooking = true;
+        }
+        else if (requestModel.RequestType is RequestType.Cancel)
+        {
+            isBooking = false;
+            isCancellation = true;
+        }
+
+        //Console.WriteLine($"Name: {requestModel.Tour.Customer.Name}");
+        //Console.WriteLine($"E-mail: {requestModel.Tour.Customer.Email}");
+        //Console.WriteLine($"Tour: {requestModel.Tour.TourName}");
+        //Console.WriteLine($"Request Type: {requestModel.RequestType.ToString()}");
+    }
+}
